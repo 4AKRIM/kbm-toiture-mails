@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme(colors.ardoise.300) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: theme(colors.ardoise.300);
+  border-radius: 999px;
+}
+.dark *::-webkit-scrollbar-thumb {
+  background: theme(colors.ardoise.600);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-ardoise-50 text-ardoise-900 dark:bg-ardoise-950 dark:text-ardoise-50 transition-colors duration-200;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid theme(colors.tuile.500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Effet "toit" — chevron subtil utilisé comme signature visuelle */
+.roofline {
+  clip-path: polygon(0 100%, 50% 0, 100% 100%);
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    theme(colors.ardoise.100) 25%,
+    theme(colors.ardoise.200) 37%,
+    theme(colors.ardoise.100) 63%
+  );
+  background-size: 400% 100%;
+  @apply animate-shimmer;
+}
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    theme(colors.ardoise.800) 25%,
+    theme(colors.ardoise.700) 37%,
+    theme(colors.ardoise.800) 63%
+  );
+  background-size: 400% 100%;
+}

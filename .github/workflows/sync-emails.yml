@@ -1,0 +1,34 @@
+name: Synchronisation des mails KBM
+
+on:
+  schedule:
+    # Toutes les 10 minutes. GitHub Actions ne garantit pas la précision à la minute près,
+    # l'exécution réelle peut être décalée de quelques minutes selon la charge du service.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # permet aussi de lancer une synchro manuelle depuis l'onglet Actions
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: email-worker
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Relever, analyser et envoyer les mails
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          KBM_USER_ID: ${{ secrets.KBM_USER_ID }}
+          SIGNATURE: ${{ secrets.SIGNATURE }}
+        run: npm run sync
