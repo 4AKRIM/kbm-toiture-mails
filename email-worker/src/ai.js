@@ -1,7 +1,7 @@
 // Utilise l'API Gemini (Google AI Studio) — gratuite, sans carte bancaire, sans expiration.
 // Node 20+ fournit fetch nativement, aucune dépendance supplémentaire n'est nécessaire.
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.6-flash";
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 const CATEGORIES = [
