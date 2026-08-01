@@ -58,28 +58,49 @@ Pièces jointes : ${mail.piecesJointes.map((p) => p.nomFichier).join(", ") || "a
 Contenu du mail :
 ${mail.texte || "(mail sans contenu texte, probablement au format HTML uniquement ou pièce jointe seule)"}`;
 
-  const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text: contenuUtilisateur }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.3,
-        maxOutputTokens: 1000,
-      },
-    }),
+  const body = JSON.stringify({
+    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: "user", parts: [{ text: contenuUtilisateur }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.3,
+      maxOutputTokens: 1000,
+    },
   });
 
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Erreur API Gemini (${res.status}) : ${detail.slice(0, 300)}`);
+  // Le compte gratuit limite le nombre de requêtes par minute : en cas de dépassement (erreur 429),
+  // on patiente puis on réessaie, jusqu'à 3 fois, plutôt que de faire échouer toute la synchro.
+  const PAUSES_SECONDES = [20, 40, 60];
+  let dernierErreur;
+
+  for (let tentative = 0; tentative <= PAUSES_SECONDES.length; tentative++) {
+    const res = await fetch(`${ENDPOINT}?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const texte = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      return parserReponse(texte, mail);
+    }
+
+    if (res.status === 429 && tentative < PAUSES_SECONDES.length) {
+      const pause = PAUSES_SECONDES[tentative];
+      console.log(`  Quota IA atteint, pause de ${pause}s avant nouvel essai...`);
+      await new Promise((r) => setTimeout(r, pause * 1000));
+      continue;
+    }
+
+    dernierErreur = new Error(`Erreur API Gemini (${res.status}) : ${(await res.text()).slice(0, 300)}`);
+    break;
   }
 
-  const data = await res.json();
-  const texte = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  throw dernierErreur;
+}
 
+function parserReponse(texte, mail) {
   try {
     const nettoye = texte.replace(/^```json\s*|```$/g, "").trim();
     const analyse = JSON.parse(nettoye);

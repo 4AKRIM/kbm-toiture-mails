@@ -23,20 +23,29 @@ async function synchroniserMails() {
     if (connu) continue;
 
     console.log(`  Analyse IA : "${mail.sujet}"`);
-    const analyse = await analyserMail(mail);
+    try {
+      const analyse = await analyserMail(mail);
 
-    await enregistrerMail({
-      messageId: mail.messageId,
-      de: mail.de,
-      nomExpediteur: mail.nomExpediteur,
-      sujet: mail.sujet,
-      extrait: mail.texte.slice(0, 2000),
-      dateReception: mail.dateReception,
-      piecesJointes: mail.piecesJointes,
-      statut: "a_valider",
-      ...analyse,
-    });
-    nouveaux++;
+      await enregistrerMail({
+        messageId: mail.messageId,
+        de: mail.de,
+        nomExpediteur: mail.nomExpediteur,
+        sujet: mail.sujet,
+        extrait: mail.texte.slice(0, 2000),
+        dateReception: mail.dateReception,
+        piecesJointes: mail.piecesJointes,
+        statut: "a_valider",
+        ...analyse,
+      });
+      nouveaux++;
+    } catch (err) {
+      // On ne bloque pas toute la synchro pour un seul mail en erreur :
+      // il sera simplement retenté au prochain passage (dans 10 min).
+      console.error(`  ✗ Échec de l'analyse pour "${mail.sujet}" :`, err.message);
+    }
+
+    // Petite pause pour rester sous la limite de requêtes/minute du compte gratuit.
+    await new Promise((r) => setTimeout(r, 4000));
   }
 
   await setDerniereSynchro(Date.now());
